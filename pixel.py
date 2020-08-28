@@ -1,14 +1,16 @@
 import pygame
 import os
 ## This is script is used for rendering grids onto the screen only ##    
+
 class Pixel:
+    screen = None
     SIZE = 50
     LIGHT = (163, 210, 202)
     DARK = (5, 103, 118)
     ColorState = [LIGHT,DARK]
     location = os.path.dirname(__file__)
     font = pygame.font.Font(os.path.join(location,'resources','04B_19.TTF'),30)
-    screen = None
+    x_surface = font.render('x', True, (94, 170, 167))
 
     def __init__(self,x,y, state = 0):
         self.state = state
@@ -34,10 +36,10 @@ class Pixel:
             self.displayCross()
 
     def displayCross(self):
-        x_surface = self.font.render('x', True, (94, 170, 167))
+        
         new_pos = (self.x + self.SIZE//2, self.y + self.SIZE//2)
-        x_rect = x_surface.get_rect(center = (new_pos))
-        self.screen.blit(x_surface, x_rect)
+        x_rect = self.x_surface.get_rect(center = (new_pos))
+        self.screen.blit(self.x_surface, x_rect)
 
     ### Change Pixel State Methods ###
     def fill(self):

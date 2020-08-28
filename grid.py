@@ -8,22 +8,19 @@ class Grid:
     location = os.path.dirname(__file__)
     font = pygame.font.Font(os.path.join(location,'resources','04B_19.TTF'),30)
 
-    def __init__(self, columns = 5, rows = 5, player = True,  solve = False, array = None):
+    def __init__(self, columns = 5, rows = 5,  solve = False, array = None):
         self.columns = columns
         self.rows = rows
 
         self.solve = solve
-        self.player = player
 
         # Load Grid Type
-        if array and not player:   # Load a grid from a 2d array
-            self.LoadFromArray(array)
-        elif not solve and player: # If Player wants to create
+        # if array.any():   # Load a grid from a 2d array
+        #     self.LoadFromArray(array)
+        if not solve: # If Player wants to create
             self.CreateGrid()
-        elif solve and player: # If player wants to solve 
+        elif solve: # If player wants to solve 
             self.CreateGrid()
-        elif solve and not player: # Loading an existing grid
-            self.LoadGrid()
 
     def toggle_solve(self): ## Editing
         if self.solve:
@@ -40,12 +37,6 @@ class Grid:
         self.grid = np.array([np.array([Pixel(x,y,state = num) for x,num in enumerate(column)]) for y,column in enumerate(array)])
         self.columns = self.grid.shape[0]
         self.rows = self.grid.shape[1]
-
-    def LoadGrid(self):
-        pass
-
-    def SaveGrid(self):
-        pass
 
     def check_collision(self, pos, mbutton):
         for row in self.grid:
@@ -115,9 +106,9 @@ class Grid:
             columns.append(str_column)
         return rows, columns
 
-
     def grid_states(self):
-       return(np.array([[pixel.state for pixel in row] for row in self.grid]))
+        """ Grid array in pixel-state form (1s and 0s)  """
+        return(np.array([[pixel.state for pixel in row] for row in self.grid]))
 
     def __eq__(self, grid):
         comparison = self.grid_states() == grid.grid_states()
