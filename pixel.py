@@ -8,26 +8,24 @@ class Pixel:
     LIGHT = (163, 210, 202)
     DARK = (5, 103, 118)
     ColorState = [LIGHT,DARK]
-    location = os.path.dirname(__file__)
-    font = pygame.font.Font(os.path.join(location,'resources','04B_19.TTF'),30)
-    x_surface = font.render('x', True, (94, 170, 167))
+    font = pygame.font.Font(os.path.join(os.getcwd(),'resources','04B_19.TTF'),30)
+    cross_surface = font.render('x', True, (94, 170, 167))
 
-    def __init__(self,x,y, state = 0):
+    def __init__(self, pos, state = 0):
         self.state = state
         self.color = self.ColorState[self.state]
         self.crossed = False
 
-        self.relative_grid_pos = [x,y]
-        w, h = pygame.display.get_surface().get_size()
-        self.mid = (w // 2) - self.SIZE * 2.5
-        self.x = self.mid+ x*self.SIZE
-        self.y = self.mid+ y*self.SIZE
+        self.pos = pos
+        w = pygame.display.get_surface().get_size()[0]
+        self.offset = (w // 2) - self.SIZE * 2.5
+        self.x = self.offset + pos[0]*self.SIZE
+        self.y = self.offset + pos[1]*self.SIZE
         self.pointlocation = [self.x, self.y]
         self.pixel_rect = pygame.Rect(
             (self.pointlocation),
             (self.SIZE,self.SIZE),
         )
-        
 
     def render(self):
         pygame.draw.rect(self.screen, self.DARK, (self.x-2,self.y-2,self.SIZE+4,self.SIZE+4),0)
@@ -36,10 +34,9 @@ class Pixel:
             self.displayCross()
 
     def displayCross(self):
-        
         new_pos = (self.x + self.SIZE//2, self.y + self.SIZE//2)
-        x_rect = self.x_surface.get_rect(center = (new_pos))
-        self.screen.blit(self.x_surface, x_rect)
+        cross_rect = self.cross_surface.get_rect(center = (new_pos))
+        self.screen.blit(self.cross_surface, cross_rect)
 
     ### Change Pixel State Methods ###
     def fill(self):

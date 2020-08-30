@@ -5,22 +5,13 @@ import os
 from pixel import Pixel
 class Grid:
     screen = None
-    location = os.path.dirname(__file__)
-    font = pygame.font.Font(os.path.join(location,'resources','04B_19.TTF'),30)
+    font = pygame.font.Font(os.path.join(os.getcwd(),'resources','04B_19.TTF'),30)
 
-    def __init__(self, columns = 5, rows = 5,  solve = False, array = None):
+    def __init__(self, columns = 5, rows = 5,  solve = False):
         self.columns = columns
         self.rows = rows
-
-        self.solve = solve
-
-        # Load Grid Type
-        # if array.any():   # Load a grid from a 2d array
-        #     self.LoadFromArray(array)
-        if not solve: # If Player wants to create
-            self.CreateGrid()
-        elif solve: # If player wants to solve 
-            self.CreateGrid()
+        self.solve = solve ## if this is true Pixels are filled and crossed out rather than fill and empty when default
+        self.CreateGrid()
 
     def toggle_solve(self): ## Editing
         if self.solve:
@@ -30,18 +21,18 @@ class Grid:
 
     def CreateGrid(self):
         """ Creates empty grid preferrably for grid for player to solve/create """
-        self.grid = np.array([np.array([Pixel(x, y) for x in range(self.columns)]) for y in range(self.rows)])
+        self.grid = np.array([np.array([Pixel((x, y)) for x in range(self.columns)]) for y in range(self.rows)])
 
-    def LoadFromArray(self, array):
-        """ Loads a grid from a 2d array (only used from inside the code for testing purposes) """
-        self.grid = np.array([np.array([Pixel(x,y,state = num) for x,num in enumerate(column)]) for y,column in enumerate(array)])
-        self.columns = self.grid.shape[0]
-        self.rows = self.grid.shape[1]
+    # def LoadFromArray(self, array):
+    #     """ Loads a grid from a 2d array (only used from inside the code for testing purposes) """
+    #     self.grid = np.array([np.array([Pixel((x,y),state = num) for x,num in enumerate(column)]) for y,column in enumerate(array)])
+    #     self.columns = self.grid.shape[0]
+    #     self.rows = self.grid.shape[1]
 
-    def check_collision(self, pos, mbutton):
+    def check_collision(self, cursor_pos, mbutton):
         for row in self.grid:
             for pixel in row:
-                if pixel.pixel_rect.collidepoint(pos):
+                if pixel.pixel_rect.collidepoint(cursor_pos):
                     if mbutton == 'button1':
                         pixel.fill()
                     elif mbutton == 'button2' and not self.solve:
