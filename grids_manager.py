@@ -52,7 +52,7 @@ def make_grids_list():
     for num,grid_name in enumerate(sorted(os.listdir(directory))):
         print(grid_name)
         x_pos = 30 + num*30
-        y_pos = 420
+        y_pos = int(pygame.display.get_surface().get_size()[1] * 0.85)
         ## Icon Wrapping Here ##
         grid_icons.append(Grid_Icon((x_pos, y_pos), num, grid_name))
 

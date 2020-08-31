@@ -17,10 +17,13 @@ class Pixel:
         self.crossed = False
 
         self.pos = pos
+        self.align_pos()
+
+    def align_pos(self):
         w = pygame.display.get_surface().get_size()[0]
         self.offset = (w // 2) - self.SIZE * 2.5
-        self.x = self.offset + pos[0]*self.SIZE
-        self.y = self.offset + pos[1]*self.SIZE
+        self.x = self.offset + self.pos[0]*self.SIZE
+        self.y = self.offset + self.pos[1]*self.SIZE
         self.pointlocation = [self.x, self.y]
         self.pixel_rect = pygame.Rect(
             (self.pointlocation),

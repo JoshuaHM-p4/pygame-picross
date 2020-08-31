@@ -7,17 +7,11 @@ class Grid:
     screen = None
     font = pygame.font.Font(os.path.join(os.getcwd(),'resources','04B_19.TTF'),30)
 
-    def __init__(self, columns = 5, rows = 5,  solve = False):
-        self.columns = columns
-        self.rows = rows
-        self.solve = solve ## if this is true Pixels are filled and crossed out rather than fill and empty when default
-        self.CreateGrid()
+    def __init__(self, size = [5,5],  solve = False):
+        self.columns = size[0]
+        self.rows = size[0]
 
-    def toggle_solve(self): ## Editing
-        if self.solve:
-            self.solve = False
-        if not self.solve:
-            self.solve = True
+        self.CreateGrid()
 
     def CreateGrid(self):
         """ Creates empty grid preferrably for grid for player to solve/create """
@@ -29,38 +23,46 @@ class Grid:
     #     self.columns = self.grid.shape[0]
     #     self.rows = self.grid.shape[1]
 
-    def check_collision(self, cursor_pos, mbutton):
+    def change_pixel(self, cursor_pos, interaction):
         for row in self.grid:
             for pixel in row:
                 if pixel.pixel_rect.collidepoint(cursor_pos):
-                    if mbutton == 'button1':
-                        pixel.fill()
-                    elif mbutton == 'button2' and not self.solve:
+                    if interaction == 'empty':
                         pixel.empty()
-                    elif mbutton == 'button2' and self.solve:
+                    elif interaction == 'fill':
+                        pixel.fill()
+                    elif interaction == 'cross':
                         pixel.cross()
+                    elif interaction == 'uncross':
+                        pixel.uncross()
 
     def draw(self):
         for row in self.grid:
             for pix in row:
                 pix.render()
 
+    def realign(self):
+        # This function is used when resizing is used when screen is resized
+        for row in self.grid:
+            for pix in row:
+                pix.align_pos()
+
     def drawNumbers(self, rows, columns):
-        for i,n in enumerate(rows):
+        for i,num in enumerate(rows):
             pixel_pos = self.grid[i][0].pointlocation
-            text_pos = (pixel_pos[0] - len(n.strip()), pixel_pos[1] + Pixel.SIZE//2)
+            text_pos = (pixel_pos[0] - len(num.strip()), pixel_pos[1] + Pixel.SIZE//2)
             
-            num_surface = self.font.render(str(n), True, (94, 170, 167))
+            num_surface = self.font.render(str(num), True, (94, 170, 167))
             num_rect = num_surface.get_rect(midright = text_pos)
             Grid.screen.blit(num_surface, num_rect)
 
-        for i,n in enumerate(columns):
+        for i,num in enumerate(columns):
             pixel_pos = self.grid[0][i].pointlocation
-            vertical_text = n.strip()
+            vertical_text = num.strip()
             for y,num in enumerate(vertical_text):
-                w = Pixel.SIZE
-                text_pos = (pixel_pos[0] + Pixel.SIZE//2, 
-                pixel_pos[1] - (-y * w *0.3) - (len(vertical_text)* (w * 0.3)) 
+                text_pos = (
+                    pixel_pos[0] + Pixel.SIZE//2, 
+                    pixel_pos[1] - int(-y * 15) - int(len(vertical_text)*15) 
                 )
                 num_surface = self.font.render(str(num), True, (94, 170, 167))
                 num_rect = num_surface.get_rect(center = text_pos)
