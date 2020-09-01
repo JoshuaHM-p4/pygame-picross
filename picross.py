@@ -2,8 +2,10 @@ import pygame, sys, os
 
 author = 'JoshuaHM-p4'
 # WIP Checklist 
-# Level Grid Icons Wrapping
+# Lose condition
+# Level Icons Arrow buttons for navigation
 # Deleting Editing Levels
+# 10x10 grids
 
 def settings_animation(surface, pos):
     if settings_hidden.collidepoint(pos) and settings_rect.centerx <= 25:
@@ -43,6 +45,7 @@ class GameState:
     def __init__(self):
         self.state = 'create'
         self.player_grid = Grid()
+        print(self.player_grid.grid.dtype)
 
     def state_manager(self):
         if self.state == 'create':
@@ -62,27 +65,34 @@ class GameState:
                     self.resized = not self.resized
                     self.resize_everything()
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if settings_rect.collidepoint(pos):
-                    self.menu_visible = not self.menu_visible
-                elif play_rect.collidepoint(pos) and self.menu_visible:
-                    self.hidden_grid = self.player_grid 
-                    self.player_grid = Grid()
-                    self.state = 'solve'
-                    self.solve()
-                elif save_rect.collidepoint(pos) and self.menu_visible:
-                    if self.player_grid.grid_states().any():
-                        grids_manager.save_to_dir(self.player_grid.grid)
+                if event.button == 1:
+                    if settings_rect.collidepoint(pos):
+                        self.menu_visible = not self.menu_visible
+                    if play_rect.collidepoint(pos) and self.menu_visible and self.player_grid.grid_states().any():
+                        self.hidden_grid = self.player_grid 
+                        self.player_grid = Grid()
+                        self.state = 'solve'
+                        self.timer_started = not self.timer_started
+                        if self.timer_started:
+                            self.start_time = pygame.time.get_ticks()
+                        self.solve()
+                    if save_rect.collidepoint(pos) and self.menu_visible:
+                        if self.player_grid.grid_states().any():
+                            grids_manager.save_to_dir(self.player_grid.grid)
+                            grids_manager.make_grids_list()
+                            self.just_saved = True
+                            self.message_timer = 100
+                    if load_rect.collidepoint(pos) and self.menu_visible:
+                        self.load_icons_visible = not self.load_icons_visible
                         grids_manager.make_grids_list()
-                        self.just_saved = True
+                    if self.load_icons_visible and grids_manager.grid_click(pos):
+                        self.grid_filename = grids_manager.grid_click(pos)
+                        self.player_grid.grid = grids_manager.load_grid(self.grid_filename)
+                        self.player_grid.reposition_grid()
+                        self.just_loaded = True
                         self.message_timer = 100
-                elif load_rect.collidepoint(pos) and self.menu_visible:
-                    self.load_icons_visible = not self.load_icons_visible
-                    grids_manager.make_grids_list()
-                elif self.load_icons_visible and grids_manager.grid_click(pos):
-                    self.grid_filename = grids_manager.grid_click(pos)
-                    self.player_grid.grid = grids_manager.load_grid(self.grid_filename)
-                    self.just_loaded = True
-                    self.message_timer = 100
+                elif event.button == 4 and self.load_icons_visible: grids_manager.move_left()
+                elif event.button == 5 and self.load_icons_visible: grids_manager.move_right()
                 else: 
                     self.menu_visible = False
                     self.load_icons_visible = False 
@@ -136,7 +146,7 @@ class GameState:
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            if pygame.key.get_pressed()[pygame.K_x]:  #checking pressed keys
+            if pygame.key.get_pressed()[pygame.K_x]:
                 self.cross = True
             if event.type == pygame.KEYUP:
                 self.cross = False
@@ -149,30 +159,33 @@ class GameState:
                 if self.cross:
                     self.player_grid.change_pixel(pos, 'cross')
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if cross_rect.collidepoint(pos):
-                    self.cross = not self.cross
-                elif settings_rect.collidepoint(pos):
-                    self.menu_visible = not self.menu_visible
-                elif edit_rect.collidepoint(pos) and self.menu_visible:
-                    self.player_grid = self.hidden_grid
-                    self.state = 'create'
-                    self.create()
-                elif create_rect.collidepoint(pos) and self.menu_visible:
-                    self.player_grid = Grid()
-                    self.state = 'create'
-                    self.create()
-                elif load_rect.collidepoint(pos) and self.menu_visible:
-                    self.load_icons_visible = not self.load_icons_visible
-                    grids_manager.make_grids_list()
-                elif self.load_icons_visible and grids_manager.grid_click(pos):
-                    self.grid_filename = grids_manager.grid_click(pos)
-                    self.hidden_grid.grid = grids_manager.load_grid(self.grid_filename)
-                    self.player_grid = Grid()
-                    self.just_loaded = True
-                    self.message_timer = 100
-                    self.timer_started = not self.timer_started
-                    if self.timer_started:
-                        self.start_time = pygame.time.get_ticks()
+                if event.button == 1:
+                    if cross_rect.collidepoint(pos):
+                        self.cross = not self.cross
+                    if settings_rect.collidepoint(pos):
+                        self.menu_visible = not self.menu_visible
+                    if edit_rect.collidepoint(pos) and self.menu_visible:
+                        self.player_grid = self.hidden_grid
+                        self.state = 'create'
+                        self.create()
+                    if create_rect.collidepoint(pos) and self.menu_visible:
+                        self.player_grid = Grid()
+                        self.state = 'create'
+                        self.create()
+                    if load_rect.collidepoint(pos) and self.menu_visible:
+                        self.load_icons_visible = not self.load_icons_visible
+                        grids_manager.make_grids_list()
+                    if self.load_icons_visible and grids_manager.grid_click(pos):
+                        self.grid_filename = grids_manager.grid_click(pos)
+                        self.hidden_grid.grid = grids_manager.load_grid(self.grid_filename)
+                        self.player_grid = Grid()
+                        self.just_loaded = True
+                        self.message_timer = 100
+                        self.timer_started = True
+                        if self.timer_started:
+                            self.start_time = pygame.time.get_ticks()
+                elif event.button == 4 and self.load_icons_visible: grids_manager.move_left()
+                elif event.button == 5 and self.load_icons_visible: grids_manager.move_right()
                 else:
                     self.menu_visible = False
                     self.load_icons_visible = False
@@ -224,10 +237,9 @@ class GameState:
         if self.timer_started:
             self.passed_time = pygame.time.get_ticks() - self.start_time
         time_text = game_font.render(str(self.passed_time/1000), True, color_mid)
-        screen.blit(time_text, (screen_width//2 -30, screen_height//10))
+        screen.blit(time_text, (screen_width//2 -30, int(screen_height* 0.78)))
         if self.player_grid == self.hidden_grid:
             self.timer_started = False
-
         pygame.display.update()
         #########################################################################
 
@@ -243,9 +255,10 @@ class GameState:
             screen_height = 500
             screen = pygame.display.set_mode((screen_width, screen_height))
             Pixel.SIZE = 50
-        self.player_grid.realign()
+        self.player_grid.reposition_grid()
         cross_rect = pygame.Rect((screen_width-100,screen_height//2), (50,50))
         resize_rect = pygame.Rect((screen_width-100,(screen_height//2 - 70)), (50,50))
+        grids_manager.make_grids_list()
 
 
     def show_Menu(self):

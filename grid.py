@@ -7,10 +7,9 @@ class Grid:
     screen = None
     font = pygame.font.Font(os.path.join(os.getcwd(),'resources','04B_19.TTF'),30)
 
-    def __init__(self, size = [5,5],  solve = False):
-        self.columns = size[0]
+    def __init__(self, size = (5,5)):
         self.rows = size[0]
-
+        self.columns = size[1]
         self.CreateGrid()
 
     def CreateGrid(self):
@@ -41,8 +40,8 @@ class Grid:
             for pix in row:
                 pix.render()
 
-    def realign(self):
-        # This function is used when resizing is used when screen is resized
+    def reposition_grid(self):
+        # This function is used to reposition grid when resized
         for row in self.grid:
             for pix in row:
                 pix.align_pos()

@@ -8,7 +8,7 @@ class Pixel:
     LIGHT = (163, 210, 202)
     DARK = (5, 103, 118)
     ColorState = [LIGHT,DARK]
-    font = pygame.font.Font(os.path.join(os.getcwd(),'resources','04B_19.TTF'),30)
+    font = pygame.font.Font(os.path.join(os.getcwd(),'resources','04B_19.TTF'),int(SIZE*0.6))
     cross_surface = font.render('x', True, (94, 170, 167))
 
     def __init__(self, pos, state = 0):
