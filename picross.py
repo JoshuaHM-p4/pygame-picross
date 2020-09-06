@@ -85,8 +85,8 @@ class GameState:
                     if load_rect.collidepoint(pos) and self.menu_visible:
                         self.load_icons_visible = not self.load_icons_visible
                         grids_manager.make_grids_list()
-                    if self.load_icons_visible and grids_manager.grid_click(pos):
-                        self.grid_filename = grids_manager.grid_click(pos)
+                    if self.load_icons_visible and grids_manager.icon_click(pos):
+                        self.grid_filename = grids_manager.icon_click(pos)
                         self.player_grid.grid = grids_manager.load_grid(self.grid_filename)
                         self.player_grid.reposition_grid()
                         self.just_loaded = True
@@ -117,6 +117,14 @@ class GameState:
         if self.load_icons_visible:
             grids_manager.show_grid_icons(screen)
 
+        # < Toggle Scale Button > #
+        pygame.draw.rect(screen, color_light, resize_rect)
+        if not self.resized:
+            screen.blit(resize_icon_1, (resize_rect.x - 3, resize_rect.y - 3))
+        else:
+            screen.blit(resize_icon_2, (resize_rect.x + 5, resize_rect.y + 5))
+            
+
         # < Message > #
         if self.message_timer >= 1:
             if self.just_loaded:
@@ -127,13 +135,6 @@ class GameState:
         else:
             self.just_loaded = False
             self.just_saved = False
-        
-        # < Toggle Scale Button > #
-        pygame.draw.rect(screen, color_light, resize_rect)
-        if not self.resized:
-            screen.blit(resize_icon_1, (resize_rect.x - 3, resize_rect.y - 3))
-        else:
-            screen.blit(resize_icon_2, (resize_rect.x + 5, resize_rect.y + 5))
 
 
         pygame.display.update()
@@ -175,8 +176,8 @@ class GameState:
                     if load_rect.collidepoint(pos) and self.menu_visible:
                         self.load_icons_visible = not self.load_icons_visible
                         grids_manager.make_grids_list()
-                    if self.load_icons_visible and grids_manager.grid_click(pos):
-                        self.grid_filename = grids_manager.grid_click(pos)
+                    if self.load_icons_visible and grids_manager.icon_click(pos):
+                        self.grid_filename = grids_manager.icon_click(pos)
                         self.hidden_grid.grid = grids_manager.load_grid(self.grid_filename)
                         self.player_grid = Grid()
                         self.just_loaded = True
@@ -211,6 +212,20 @@ class GameState:
         if self.load_icons_visible:
             grids_manager.show_grid_icons(screen)
 
+        # < Cross Button > #
+        pygame.draw.rect(screen, color_light, cross_rect)
+        if self.cross:
+            screen.blit(cross_active, (cross_rect.x + 17, cross_rect.y + 10))
+        else:
+            screen.blit(cross_inactive, (cross_rect.x + 17, cross_rect.y + 10))         
+            
+        # < Toggle Scale Button > #
+        pygame.draw.rect(screen, color_light, resize_rect)
+        if not self.resized:
+            screen.blit(resize_icon_1, (resize_rect.x - 3, resize_rect.y - 3))
+        else:
+            screen.blit(resize_icon_2, (resize_rect.x + 5, resize_rect.y + 5))
+        
         # < Message > #
         if self.message_timer >= 1:
             if self.just_loaded:
@@ -219,20 +234,6 @@ class GameState:
         elif self.just_loaded:
             self.just_loaded = False
 
-        # < Cross Button > #
-        pygame.draw.rect(screen, color_light, cross_rect)
-        if self.cross:
-            screen.blit(cross_active, (cross_rect.x + 17, cross_rect.y + 10))
-        else:
-            screen.blit(cross_inactive, (cross_rect.x + 17, cross_rect.y + 10))
-        
-        # < Toggle Scale Button > #
-        pygame.draw.rect(screen, color_light, resize_rect)
-        if not self.resized:
-            screen.blit(resize_icon_1, (resize_rect.x - 3, resize_rect.y - 3))
-        else:
-            screen.blit(resize_icon_2, (resize_rect.x + 5, resize_rect.y + 5))
-            
         # < Timer > #
         if self.timer_started:
             self.passed_time = pygame.time.get_ticks() - self.start_time
@@ -251,8 +252,8 @@ class GameState:
             screen = pygame.display.set_mode((screen_width, screen_height))
             Pixel.SIZE = 76      
         elif not self.resized:
-            screen_width = 500
-            screen_height = 500
+            screen_width = 480
+            screen_height = 480
             screen = pygame.display.set_mode((screen_width, screen_height))
             Pixel.SIZE = 50
         self.player_grid.reposition_grid()
@@ -261,7 +262,7 @@ class GameState:
         grids_manager.make_grids_list()
 
 
-    def show_Menu(self):
+    def show_Menu(self): ## Menu Buttons ##
         if self.menu_visible:
             if self.state == 'create':
                 # Play button
@@ -304,8 +305,8 @@ from grid import Grid
 import grids_manager
 
 # Game Screen Variables
-screen_width = 500
-screen_height = 500
+screen_width = 480
+screen_height = 480
 screen = pygame.display.set_mode((screen_width,screen_height))
 # pygame.display.set_icon(icon)
 
@@ -322,6 +323,7 @@ location = os.getcwd()
 game_font =  pygame.font.Font(os.path.join(location,'resources','04B_19.TTF'),30)
 game_font_s =  pygame.font.Font(os.path.join(location,'resources','04B_19.TTF'),25)
 
+###### Button Variables #######
 cross_rect = pygame.Rect((screen_width-100,screen_height//2), (50,50))
 cross_active = game_font.render('x', True, color_dark)
 cross_inactive = game_font.render('x', True, color_mid)
@@ -342,20 +344,22 @@ recolor_surface(resize_icon_2, color_dark)
 # text_1x = game_font_s.render('1x', True, color_bg) 
 # text_2x = game_font_s.render('2x', True, color_bg)
 
-play_rect = pygame.Rect((0, 100), (100, 50))
+play_rect = pygame.Rect((0, 100), (90, 50))
 play_text = game_font.render('Play', True, color_dark)
 
-edit_rect = pygame.Rect((0, 100), (100, 50))
+edit_rect = pygame.Rect((0, 100), (90, 50))
 edit_text = game_font.render('Edit', True, color_dark) 
 
-save_rect = pygame.Rect((0, 150), (100, 50))
+save_rect = pygame.Rect((0, 150), (90, 50))
 save_text = game_font.render('Save', True, color_dark)
 
-create_rect = pygame.Rect((0, 150), (100, 50))
+create_rect = pygame.Rect((0, 150), (90, 50))
 create_text = game_font_s.render('Create', True, color_dark)
 
-load_rect = pygame.Rect((0, 200), (100, 50))
+load_rect = pygame.Rect((0, 200), (90, 50))
 load_text = game_font.render('Load', True, color_dark)
+
+
 
 ############################### < MAIN GAME LOOP > ####################################
 game_state = GameState()
