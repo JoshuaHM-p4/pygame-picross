@@ -3,9 +3,7 @@ import pygame, sys, os
 author = 'JoshuaHM-p4'
 # WIP Checklist 
 # Lose condition
-# Level Icons Arrow buttons for navigation
 # Deleting Editing Levels
-# 10x10 grids
 
 def settings_animation(surface, pos):
     if settings_hidden.collidepoint(pos) and settings_rect.centerx <= 25:
@@ -32,6 +30,7 @@ class GameState:
     load_icons_visible = False
 
     grid_filename = None
+    grid_is_10x10 = False
 
     just_loaded = False
     just_saved = False
@@ -45,7 +44,6 @@ class GameState:
     def __init__(self):
         self.state = 'create'
         self.player_grid = Grid()
-        print(self.player_grid.grid.dtype)
 
     def state_manager(self):
         if self.state == 'create':
@@ -64,17 +62,19 @@ class GameState:
                 if resize_rect.collidepoint(pos):
                     self.resized = not self.resized
                     self.resize_everything()
+                if grid_size_rect.collidepoint(pos):
+                    self.grid_is_10x10 = not self.grid_is_10x10
+                    self.player_grid.change_size(self.grid_is_10x10, self.resized)
+                    self.player_grid.CreateGrid()
+                    self.player_grid.reposition_grid()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     if settings_rect.collidepoint(pos):
                         self.menu_visible = not self.menu_visible
-                    if play_rect.collidepoint(pos) and self.menu_visible and self.player_grid.grid_states().any():
+                    if play_rect.collidepoint(pos) and self.menu_visible:
                         self.hidden_grid = self.player_grid 
-                        self.player_grid = Grid()
+                        self.player_grid = Grid(self.player_grid.grid.shape)
                         self.state = 'solve'
-                        self.timer_started = not self.timer_started
-                        if self.timer_started:
-                            self.start_time = pygame.time.get_ticks()
                         self.solve()
                     if save_rect.collidepoint(pos) and self.menu_visible:
                         if self.player_grid.grid_states().any():
@@ -87,7 +87,9 @@ class GameState:
                         grids_manager.make_grids_list()
                     if self.load_icons_visible and grids_manager.icon_click(pos):
                         self.grid_filename = grids_manager.icon_click(pos)
-                        self.player_grid.grid = grids_manager.load_grid(self.grid_filename)
+                        loaded_npy = grids_manager.load_grid(self.grid_filename)
+                        self.player_grid.load_grid(loaded_npy, self.resized)
+                        self.grid_is_10x10 = self.player_grid.grid.shape == (10,10)
                         self.player_grid.reposition_grid()
                         self.just_loaded = True
                         self.message_timer = 100
@@ -123,7 +125,13 @@ class GameState:
             screen.blit(resize_icon_1, (resize_rect.x - 3, resize_rect.y - 3))
         else:
             screen.blit(resize_icon_2, (resize_rect.x + 5, resize_rect.y + 5))
-            
+        
+        # < Switch Grid Size Button > #
+        pygame.draw.rect(screen, color_light, grid_size_rect)
+        if self.grid_is_10x10:
+            screen.blit(grid_size5, (grid_size_rect.x + 17, grid_size_rect.y + 10))
+        else:
+            screen.blit(grid_size10, (grid_size_rect.x + 17, grid_size_rect.y + 10)) 
 
         # < Message > #
         if self.message_timer >= 1:
@@ -178,8 +186,11 @@ class GameState:
                         grids_manager.make_grids_list()
                     if self.load_icons_visible and grids_manager.icon_click(pos):
                         self.grid_filename = grids_manager.icon_click(pos)
-                        self.hidden_grid.grid = grids_manager.load_grid(self.grid_filename)
-                        self.player_grid = Grid()
+                        loaded_npy = grids_manager.load_grid(self.grid_filename)
+                        self.hidden_grid.load_grid(loaded_npy, self.resized)
+                        self.player_grid = Grid(self.hidden_grid.grid.shape)
+                        self.grid_is_10x10 = self.player_grid.grid.shape == (10,10)
+                        self.player_grid.reposition_grid()
                         self.just_loaded = True
                         self.message_timer = 100
                         self.timer_started = True
@@ -245,22 +256,27 @@ class GameState:
         #########################################################################
 
     def resize_everything(self):
-        global screen, screen_height, screen_width, cross_rect, resize_rect
+        global screen, screen_height, screen_width, cross_rect, resize_rect, grid_size_rect
+        ## Main Display Screen Resize ##
         if self.resized:
             screen_width = 760
             screen_height = 760
             screen = pygame.display.set_mode((screen_width, screen_height))
-            Pixel.SIZE = 76      
         elif not self.resized:
             screen_width = 480
             screen_height = 480
             screen = pygame.display.set_mode((screen_width, screen_height))
-            Pixel.SIZE = 50
+
+        ## Screen Elements Resize ##
+        self.player_grid.change_size(self.grid_is_10x10, self.resized)
         self.player_grid.reposition_grid()
+
+        ## UI Resize ##
+        grid_size_rect = pygame.Rect((screen_width-100,screen_height//2), (50,50))
         cross_rect = pygame.Rect((screen_width-100,screen_height//2), (50,50))
         resize_rect = pygame.Rect((screen_width-100,(screen_height//2 - 70)), (50,50))
         grids_manager.make_grids_list()
-
+        
 
     def show_Menu(self): ## Menu Buttons ##
         if self.menu_visible:
@@ -333,6 +349,10 @@ settings_surface = pygame.image.load(os.path.join(location, 'resources', 'icons'
 settings_surface = pygame.transform.scale(settings_surface, (50,50))
 recolor_surface(settings_surface, color_dark)
 settings_rect = settings_surface.get_rect(topleft = (0,0))
+
+grid_size_rect = pygame.Rect((screen_width-100,screen_height//2), (50,50))
+grid_size5 = game_font_s.render('5', True, color_dark)
+grid_size10 = game_font_s.render('10', True, color_dark)
 
 resize_rect = pygame.Rect((screen_width-100,(screen_height//2 - 70)), (50,50))
 resize_icon_1 = pygame.image.load(os.path.join(location, 'resources', 'icons', 'resize-1.png')).convert_alpha()

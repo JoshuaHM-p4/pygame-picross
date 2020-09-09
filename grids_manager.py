@@ -6,13 +6,15 @@ directory = os.path.join(os.getcwd(),  'grids')
 font = pygame.font.Font(os.path.join(os.getcwd(),'resources','04B_19.TTF'),15)
 dark_color = (5, 102, 118)
 light_color = (163, 210, 202)
-if not os.path.exists(directory):
-    os.mkdir(directory)
+
 
 def save_to_dir(grid):
+    if not os.path.exists(directory):
+        os.mkdir(directory)
+
     filename = 'Grid'
     fullpath = os.path.join(directory, filename)
-
+    
     i = 0
     while os.path.exists(fullpath + '.npy'):
         i += 1
@@ -61,6 +63,8 @@ def icon_click(cursor_pos):
 
 def make_grids_list():
     global grid_icons, min_icon, max_icon, screen_height, font, move_right_rect, move_left_rect
+    if not os.path.exists(directory):
+        os.mkdir(directory)
     screen_width, screen_height = pygame.display.get_surface().get_size() 
     grid_icons = [Grid_Icon(num, grid_name) for num,grid_name in enumerate( sorted( os.listdir(directory) ) ) ]
     

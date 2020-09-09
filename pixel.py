@@ -1,43 +1,39 @@
 import pygame
-import os
-## This is script is used for rendering grids onto the screen only ##    
+import os 
 
 class Pixel:
     screen = None
-    SIZE = 50
     LIGHT = (163, 210, 202)
     DARK = (5, 103, 118)
     ColorState = [LIGHT,DARK]
-    font = pygame.font.Font(os.path.join(os.getcwd(),'resources','04B_19.TTF'),int(SIZE*0.6))
+    font = pygame.font.Font(os.path.join(os.getcwd(),'resources','04B_19.TTF'),30)
     cross_surface = font.render('x', True, (94, 170, 167))
+    size = 50
 
-    def __init__(self, pos, state = 0):
+    def __init__(self, pos = tuple, state = 0):
         self.state = state
         self.color = self.ColorState[self.state]
         self.crossed = False
-
+        
         self.pos = pos
-        self.align_pos()
+        self.align_pos(5)
 
-    def align_pos(self):
+    def align_pos(self, grid_size):
         w = pygame.display.get_surface().get_size()[0]
-        self.offset = (w // 2) - self.SIZE * 2.5
-        self.x = self.offset + self.pos[0]*self.SIZE
-        self.y = self.offset + self.pos[1]*self.SIZE
+        offset = (w // 2) - self.size * grid_size//2
+        self.x = offset + self.pos[0]*self.size
+        self.y = offset + self.pos[1]*self.size
         self.pointlocation = [self.x, self.y]
-        self.pixel_rect = pygame.Rect(
-            (self.pointlocation),
-            (self.SIZE,self.SIZE),
-        )
+        self.pixel_rect = pygame.Rect((self.pointlocation),(self.size,self.size),)
 
     def render(self):
-        pygame.draw.rect(self.screen, self.DARK, (self.x-2,self.y-2,self.SIZE+4,self.SIZE+4),0)
+        pygame.draw.rect(self.screen, self.DARK, (self.x-2,self.y-2,self.size+4,self.size+4),0)
         pygame.draw.rect(self.screen, self.color, self.pixel_rect)
         if self.crossed:
             self.displayCross()
 
     def displayCross(self):
-        new_pos = (self.x + self.SIZE//2, self.y + self.SIZE//2)
+        new_pos = (self.x + self.size//2, self.y + self.size//2)
         cross_rect = self.cross_surface.get_rect(center = (new_pos))
         self.screen.blit(self.cross_surface, cross_rect)
 
