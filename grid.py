@@ -25,7 +25,7 @@ class Grid:
         self.change_size(npy_grid.shape == (10,10), is_resized)
         self.grid = npy_grid
 
-    def change_pixel(self, cursor_pos, interaction):
+    def change_pixel(self, cursor_pos, interaction):    
         for row in self.grid:
             for pixel in row:
                 if pixel.pixel_rect.collidepoint(cursor_pos):
@@ -112,6 +112,9 @@ class Grid:
         """ Grid array in pixel-state form (1s and 0s)  """
         return(np.array([[pixel.state for pixel in row] for row in self.grid]))
 
-    def __eq__(self, grid): 
-        comparison = self.grid_states() == grid.grid_states()
-        return comparison.all()
+    def __eq__(self, second_grid): 
+        comparison = [p == h for pgrid,hgrid in zip(self.grid, second_grid.grid) for p,h in zip(pgrid,hgrid)]
+        return np.array(comparison, dtype = object)
+
+    def compare(self, second_grid):
+        self.grid 

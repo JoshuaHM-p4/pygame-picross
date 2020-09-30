@@ -1,8 +1,10 @@
 import pygame, sys, os
+from collections import Counter
+
 
 author = 'JoshuaHM-p4'
 # WIP Checklist 
-# Lose condition
+# Lose Condition
 # Deleting Editing Levels
 
 def settings_animation(surface, pos):
@@ -15,13 +17,18 @@ def settings_animation(surface, pos):
     return surface
 
 def top_text(message: str):
-    game_text = game_font.render(message, True, color_dark)
-    text_rect = game_text.get_rect(center = (screen_width//2,screen_height//20))
-    screen.blit(game_text, text_rect)
+    message_text = game_font.render(message, True, color_dark)
+    text_rect = message_text.get_rect(center = (screen_width//2,screen_height//20))
+    screen.blit(message_text, text_rect)
 
 def bottom_text(message: str):
     message_text = game_font.render(str(message), True, color_dark)
     message_rect = message_text.get_rect(center = (screen_width//2 - len(message)//2, int(screen_height*0.95)))
+    screen.blit(message_text, message_rect)
+
+def live_count(lives):
+    message_text = game_font_s.render('Lives: '+ str(lives), True, color_dark)
+    message_rect = message_text.get_rect(center = (screen_width//2 - 50, screen_width//20 + 30))
     screen.blit(message_text, message_rect)
 
 class GameState:
@@ -37,7 +44,7 @@ class GameState:
     message_timer = 0
 
     cross = False
-    timer_started = False
+    solving = False
     start_time = 0
     passed_time = 0
 
@@ -93,6 +100,10 @@ class GameState:
                         self.player_grid.reposition_grid()
                         self.just_loaded = True
                         self.message_timer = 100
+                        if self.player_grid.grid_states().any():
+                            self.solving = True
+                            if self.solving:
+                                self.start_time = pygame.time.get_ticks()
                 elif event.button == 4 and self.load_icons_visible: grids_manager.move_left()
                 elif event.button == 5 and self.load_icons_visible: grids_manager.move_right()
                 else: 
@@ -163,10 +174,11 @@ class GameState:
                 if resize_rect.collidepoint(pos):
                     self.resized = not self.resized
                     self.resize_everything()
-                if not self.cross:
-                    self.player_grid.change_pixel(pos,'fill')
-                if self.cross:
-                    self.player_grid.change_pixel(pos, 'cross')
+                if self.solving:
+                    if not self.cross:
+                        self.player_grid.change_pixel(pos,'fill')
+                    if self.cross:
+                        self.player_grid.change_pixel(pos, 'cross')
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     if cross_rect.collidepoint(pos):
@@ -193,15 +205,15 @@ class GameState:
                         self.player_grid.reposition_grid()
                         self.just_loaded = True
                         self.message_timer = 100
-                        self.timer_started = True
-                        if self.timer_started:
+                        self.solving = True
+                        if self.solving:
                             self.start_time = pygame.time.get_ticks()
                 elif event.button == 4 and self.load_icons_visible: grids_manager.move_left()
                 elif event.button == 5 and self.load_icons_visible: grids_manager.move_right()
                 else:
                     self.menu_visible = False
                     self.load_icons_visible = False
-            if self.cross and pygame.mouse.get_pressed()[2]:
+            if self.cross and pygame.mouse.get_pressed()[2] and self.solving:
                 self.player_grid.change_pixel(pos,'uncross')
            
 
@@ -246,12 +258,19 @@ class GameState:
             self.just_loaded = False
 
         # < Timer > #
-        if self.timer_started:
+        if self.solving:
             self.passed_time = pygame.time.get_ticks() - self.start_time
         time_text = game_font.render(str(self.passed_time/1000), True, color_mid)
         screen.blit(time_text, (screen_width//2 -30, int(screen_height* 0.78)))
-        if self.player_grid == self.hidden_grid:
-            self.timer_started = False
+
+        # < Win/Lose condition > 
+        comparison = self.player_grid == self.hidden_grid
+        lives = 5 - Counter(comparison).get('Wrong', 0) # 5 - no.of wrongs
+        live_count(lives)
+
+        if comparison.all() or lives <= 0:
+            self.solving = False
+
         pygame.display.update()
         #########################################################################
 

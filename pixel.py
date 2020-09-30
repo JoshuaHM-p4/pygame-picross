@@ -58,4 +58,7 @@ class Pixel:
 
     def __repr__(self):
         return str(int(self.state))
-    
+
+    def __eq__(self, p2):
+        # 'Wrong' if the player fills a pixel where it shouldn't be 
+        return 'Wrong' if self.state and not p2.state else self.state == p2.state
