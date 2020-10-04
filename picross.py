@@ -1,11 +1,11 @@
-import pygame, sys, os
+import pygame, sys, os, random
 from collections import Counter
 
 
 author = 'JoshuaHM-p4'
-# WIP Checklist 
-# Lose Condition
+# WIP Checklist
 # Deleting Editing Levels
+# User Interface overhaul or rework
 
 def settings_animation(surface, pos):
     if settings_hidden.collidepoint(pos) and settings_rect.centerx <= 25:
@@ -26,9 +26,9 @@ def bottom_text(message: str):
     message_rect = message_text.get_rect(center = (screen_width//2 - len(message)//2, int(screen_height*0.95)))
     screen.blit(message_text, message_rect)
 
-def live_count(lives):
+def life_count(lives, render_offset = [0,0]):
     message_text = game_font_s.render('Lives: '+ str(lives), True, color_dark)
-    message_rect = message_text.get_rect(center = (screen_width//2 - 50, screen_width//20 + 30))
+    message_rect = message_text.get_rect(center = (screen_width//2 + render_offset[0], screen_width//20 + 30 + render_offset[1]))
     screen.blit(message_text, message_rect)
 
 class GameState:
@@ -47,6 +47,8 @@ class GameState:
     solving = False
     start_time = 0
     passed_time = 0
+    wrongs = 0
+    shake = 0
 
     def __init__(self):
         self.state = 'create'
@@ -82,6 +84,7 @@ class GameState:
                         self.hidden_grid = self.player_grid 
                         self.player_grid = Grid(self.player_grid.grid.shape)
                         self.state = 'solve'
+                        self.menu_visible = False
                         self.solve()
                     if save_rect.collidepoint(pos) and self.menu_visible:
                         if self.player_grid.grid_states().any():
@@ -260,15 +263,26 @@ class GameState:
         # < Timer > #
         if self.solving:
             self.passed_time = pygame.time.get_ticks() - self.start_time
-        time_text = game_font.render(str(self.passed_time/1000), True, color_mid)
+        status_color = color_light if self.solving else color_dark
+        time_text = game_font.render(str(self.passed_time/1000), True, status_color)
         screen.blit(time_text, (screen_width//2 -30, int(screen_height* 0.78)))
 
         # < Win/Lose condition > 
         comparison = self.player_grid == self.hidden_grid
-        lives = 5 - Counter(comparison).get('Wrong', 0) # 5 - no.of wrongs
-        live_count(lives)
+        cur_wrongs = Counter(comparison).get('Wrong', 0)
+        if cur_wrongs != self.wrongs: # shake life count if player got wrong 
+            self.wrongs = cur_wrongs
+            self.shake = 20
+        render_offset = [0,0]
+        if self.shake >= 0:
+            self.shake -= 1
+            render_offset[0] = random.randint(0,8) - 4
+            render_offset[1] = random.randint(0,8) -4
+            
+        lives = 5 - self.wrongs
+        life_count(lives, render_offset)
 
-        if comparison.all() or lives <= 0:
+        if comparison.all() or lives <= 0: # Lose
             self.solving = False
 
         pygame.display.update()
