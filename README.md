@@ -3,7 +3,32 @@ This is my rendition of the game called "Picross" (by Nintendo) or Nonagrams mad
 
 ## Requirements
 - Python 3.x
-- Pygame
+- Pygame 2.x
+- NumPy
 
 ## Run Instructions
 Run the file *picross.py* to start the program.
+
+## Game Controls
+ScrollWheel
+- Scroll next/previous through levels menu
+
+### Creative Mode
+LeftMouseButton
+- Select buttons
+- Fill Pixel 
+
+RightMouseButton
+- Empty Pixel
+
+### Solve Mode
+X
+- Go into "cross pixels" mode
+
+LeftMouseButton
+- Select buttons
+- Fill Pixels (If 'X' key is not held)
+- Cross Pixels (If 'X' key is held)
+
+RightMouseButton
+- Uncross Pixels (If 'X' key is held)

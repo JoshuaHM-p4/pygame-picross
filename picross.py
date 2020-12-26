@@ -1,11 +1,84 @@
 import pygame, sys, os, random
 from collections import Counter
+GITHUB_AUTHOR = 'JoshuaHM-p4'
 
+##################################### General Setup #################################
+pygame.init()
+clock = pygame.time.Clock()
 
-author = 'JoshuaHM-p4'
-# WIP Checklist
-# Deleting Editing Levels
-# User Interface overhaul or rework
+from pixel import Pixel
+from grid import Grid
+import grids_manager
+
+# Game Screen Variables
+screen_width = 480
+screen_height = 480
+screen = pygame.display.set_mode((screen_width,screen_height))
+
+Pixel.screen = screen
+Grid.screen = screen
+
+pygame.display.set_caption("Pygame Picross")
+color_bg = (232, 222, 210)
+color_light = (163, 210, 202)
+color_mid = (94, 170, 168)
+color_dark = (5, 102, 118)
+location = os.getcwd()
+game_font =  pygame.font.Font(os.path.join(location,'resources','04B_19.TTF'),30)
+game_font_s =  pygame.font.Font(os.path.join(location,'resources','04B_19.TTF'),25)
+
+## Recolor Function ##
+def recolor_surface(surface, color):
+    """Fill all pixels of the surface with color, preserve transparency. Taken from StackOverflow """
+    w, h = surface.get_size()
+    r, g, b = color
+    for x in range(w):
+        for y in range(h):
+            a = surface.get_at((x, y))[3]
+            surface.set_at((x, y), pygame.Color(r, g, b, a))
+
+###### Button Variables #######
+cross_rect = pygame.Rect((screen_width-100,screen_height//2), (50,50))
+cross_active = game_font.render('x', True, color_dark)
+cross_inactive = game_font.render('x', True, color_mid)
+
+settings_hidden = pygame.Rect((0,0),(60,60))
+settings_surface = pygame.image.load(os.path.join(location, 'resources', 'icons','gear.png')).convert_alpha()
+settings_surface = pygame.transform.scale(settings_surface, (50,50))
+recolor_surface(settings_surface, color_dark)
+settings_rect = settings_surface.get_rect(topleft = (0,0))
+
+grid_size_rect = pygame.Rect((screen_width-100,screen_height//2), (50,50))
+grid_size5 = game_font_s.render('5', True, color_dark)
+grid_size10 = game_font_s.render('10', True, color_dark)
+
+resize_rect = pygame.Rect((screen_width-100,(screen_height//2 - 70)), (50,50))
+resize_icon_1 = pygame.image.load(os.path.join(location, 'resources', 'icons', 'resize-1.png')).convert_alpha()
+resize_icon_2 = pygame.image.load(os.path.join(location, 'resources', 'icons', 'resize-2.png')).convert_alpha()
+resize_icon_1 = pygame.transform.scale(resize_icon_1, (55,55))
+resize_icon_2 = pygame.transform.scale(resize_icon_2, (40,40))
+recolor_surface(resize_icon_1, color_dark)
+recolor_surface(resize_icon_2, color_dark)
+# text_1x = game_font_s.render('1x', True, color_bg) 
+# text_2x = game_font_s.render('2x', True, color_bg)
+
+menu_background = pygame.Surface((screen_width, screen_height)).convert_alpha()
+menu_background.fill((0, 0, 0, 125))
+
+play_rect = pygame.Rect((0, 100), (90, 50))
+play_text = game_font.render('Play', True, color_dark)
+
+edit_rect = pygame.Rect((0, 100), (90, 50))
+edit_text = game_font.render('Edit', True, color_dark) 
+
+save_rect = pygame.Rect((0, 150), (90, 50))
+save_text = game_font.render('Save', True, color_dark)
+
+create_rect = pygame.Rect((0, 150), (90, 50))
+create_text = game_font_s.render('Create', True, color_dark)
+
+load_rect = pygame.Rect((0, 200), (90, 50))
+load_text = game_font.render('Load', True, color_dark)
 
 def settings_animation(surface, pos):
     if settings_hidden.collidepoint(pos) and settings_rect.centerx <= 25:
@@ -13,7 +86,7 @@ def settings_animation(surface, pos):
     elif settings_rect.centerx >= -30:
         settings_rect.centerx -= 1
     surface = pygame.transform.rotozoom(surface, -settings_rect.centerx*5, 1)
-    # surface = pygame.transform.rotate(surface, -settings_rect.centerx*2)
+    # surface = pygame.transform.rotate(surface, -settings_rect.centerx*5)
     return surface
 
 def top_text(message: str):
@@ -44,7 +117,7 @@ class GameState:
     message_timer = 0
 
     cross = False
-    solving = False
+    timer_on = False
     start_time = 0
     passed_time = 0
     wrongs = 0
@@ -104,9 +177,8 @@ class GameState:
                         self.just_loaded = True
                         self.message_timer = 100
                         if self.player_grid.grid_states().any():
-                            self.solving = True
-                            if self.solving:
-                                self.start_time = pygame.time.get_ticks()
+                            self.timer_on = True
+                            self.start_time = pygame.time.get_ticks()
                 elif event.button == 4 and self.load_icons_visible: grids_manager.move_left()
                 elif event.button == 5 and self.load_icons_visible: grids_manager.move_right()
                 else: 
@@ -124,15 +196,6 @@ class GameState:
         rows, columns = self.player_grid.getNumbers()
         self.player_grid.drawNumbers(rows, columns)
 
-        # < Options > #
-        rotated_surface = settings_animation(settings_surface, pos)
-        screen.blit(rotated_surface, settings_rect)
-
-        if self.menu_visible:
-            self.show_Menu()
-        if self.load_icons_visible:
-            grids_manager.show_grid_icons(screen)
-
         # < Toggle Scale Button > #
         pygame.draw.rect(screen, color_light, resize_rect)
         if not self.resized:
@@ -145,7 +208,17 @@ class GameState:
         if self.grid_is_10x10:
             screen.blit(grid_size5, (grid_size_rect.x + 17, grid_size_rect.y + 10))
         else:
-            screen.blit(grid_size10, (grid_size_rect.x + 17, grid_size_rect.y + 10)) 
+            screen.blit(grid_size10, (grid_size_rect.x + 17, grid_size_rect.y + 10))
+
+        # < Menu > #
+        rotated_surface = settings_animation(settings_surface, pos)
+        screen.blit(rotated_surface, settings_rect)
+
+        if self.menu_visible:
+            screen.blit(menu_background, menu_background.get_rect(topleft = (0,0)))
+            self.show_Menu()
+        if self.load_icons_visible:
+            grids_manager.show_grid_icons(screen)
 
         # < Message > #
         if self.message_timer >= 1:
@@ -177,10 +250,10 @@ class GameState:
                 if resize_rect.collidepoint(pos):
                     self.resized = not self.resized
                     self.resize_everything()
-                if self.solving:
+                if self.timer_on:
                     if not self.cross:
                         self.player_grid.change_pixel(pos,'fill')
-                    if self.cross:
+                    else:
                         self.player_grid.change_pixel(pos, 'cross')
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
@@ -208,15 +281,14 @@ class GameState:
                         self.player_grid.reposition_grid()
                         self.just_loaded = True
                         self.message_timer = 100
-                        self.solving = True
-                        if self.solving:
-                            self.start_time = pygame.time.get_ticks()
+                        self.timer_on = True
+                        self.start_time = pygame.time.get_ticks()
                 elif event.button == 4 and self.load_icons_visible: grids_manager.move_left()
                 elif event.button == 5 and self.load_icons_visible: grids_manager.move_right()
                 else:
                     self.menu_visible = False
                     self.load_icons_visible = False
-            if self.cross and pygame.mouse.get_pressed()[2] and self.solving:
+            if self.cross and pygame.mouse.get_pressed()[2] and self.timer_on:
                 self.player_grid.change_pixel(pos,'uncross')
            
 
@@ -228,15 +300,6 @@ class GameState:
         self.player_grid.draw()
         rows, columns = self.hidden_grid.getNumbers()
         self.player_grid.drawNumbers(rows, columns)
-
-        # < Options Menu > #
-        rotated_surface = settings_animation(settings_surface, pos)
-        screen.blit(rotated_surface, settings_rect)     
-           
-        if self.menu_visible:
-            self.show_Menu()
-        if self.load_icons_visible:
-            grids_manager.show_grid_icons(screen)
 
         # < Cross Button > #
         pygame.draw.rect(screen, color_light, cross_rect)
@@ -261,9 +324,9 @@ class GameState:
             self.just_loaded = False
 
         # < Timer > #
-        if self.solving:
+        if self.timer_on:
             self.passed_time = pygame.time.get_ticks() - self.start_time
-        status_color = color_light if self.solving else color_dark
+        status_color = color_light if self.timer_on else color_dark
         time_text = game_font.render(str(self.passed_time/1000), True, status_color)
         screen.blit(time_text, (screen_width//2 -30, int(screen_height* 0.78)))
 
@@ -278,18 +341,28 @@ class GameState:
             self.shake -= 1
             render_offset[0] = random.randint(0,8) - 4
             render_offset[1] = random.randint(0,8) -4
-            
+           
         lives = 5 - self.wrongs
         life_count(lives, render_offset)
 
         if comparison.all() or lives <= 0: # Lose
-            self.solving = False
+            self.timer_on = False
+
+        # < Options Menu > #
+        rotated_surface = settings_animation(settings_surface, pos)
+        screen.blit(rotated_surface, settings_rect)     
+           
+        if self.menu_visible:
+            screen.blit(menu_background, menu_background.get_rect(topleft = (0,0)))
+            self.show_Menu()
+        if self.load_icons_visible:
+            grids_manager.show_grid_icons(screen)
 
         pygame.display.update()
         #########################################################################
 
     def resize_everything(self):
-        global screen, screen_height, screen_width, cross_rect, resize_rect, grid_size_rect
+        global screen, screen_height, screen_width, cross_rect, resize_rect, grid_size_rect, menu_background
         ## Main Display Screen Resize ##
         if self.resized:
             screen_width = 760
@@ -299,6 +372,8 @@ class GameState:
             screen_width = 480
             screen_height = 480
             screen = pygame.display.set_mode((screen_width, screen_height))
+        menu_background = pygame.Surface((screen_width, screen_height)).convert_alpha()
+        menu_background.fill((0, 0, 0, 125))
 
         ## Screen Elements Resize ##
         self.player_grid.change_size(self.grid_is_10x10, self.resized)
@@ -334,86 +409,6 @@ class GameState:
             pygame.draw.rect(screen, color_light, load_rect)
             screen.blit(load_text, (load_rect.x + 12, load_rect.y + 12))
                 
-
-def recolor_surface(surface, color):
-    """Fill all pixels of the surface with color, preserve transparency. Taken from StackOverflow """
-    w, h = surface.get_size()
-    r, g, b = color
-    for x in range(w):
-        for y in range(h):
-            a = surface.get_at((x, y))[3]
-            surface.set_at((x, y), pygame.Color(r, g, b, a))
-
-
-##################################### General Setup #################################
-pygame.init()
-clock = pygame.time.Clock()
-
-from pixel import Pixel
-from grid import Grid
-import grids_manager
-
-# Game Screen Variables
-screen_width = 480
-screen_height = 480
-screen = pygame.display.set_mode((screen_width,screen_height))
-# pygame.display.set_icon(icon)
-
-
-Pixel.screen = screen
-Grid.screen = screen
-
-pygame.display.set_caption("Pygame Picross")
-color_bg = (232, 222, 210)
-color_light = (163, 210, 202)
-color_mid = (94, 170, 168)
-color_dark = (5, 102, 118)
-location = os.getcwd()
-game_font =  pygame.font.Font(os.path.join(location,'resources','04B_19.TTF'),30)
-game_font_s =  pygame.font.Font(os.path.join(location,'resources','04B_19.TTF'),25)
-
-###### Button Variables #######
-cross_rect = pygame.Rect((screen_width-100,screen_height//2), (50,50))
-cross_active = game_font.render('x', True, color_dark)
-cross_inactive = game_font.render('x', True, color_mid)
-
-settings_hidden = pygame.Rect((0,0),(60,60))
-settings_surface = pygame.image.load(os.path.join(location, 'resources', 'icons','gear.png')).convert_alpha()
-settings_surface = pygame.transform.scale(settings_surface, (50,50))
-recolor_surface(settings_surface, color_dark)
-settings_rect = settings_surface.get_rect(topleft = (0,0))
-
-grid_size_rect = pygame.Rect((screen_width-100,screen_height//2), (50,50))
-grid_size5 = game_font_s.render('5', True, color_dark)
-grid_size10 = game_font_s.render('10', True, color_dark)
-
-resize_rect = pygame.Rect((screen_width-100,(screen_height//2 - 70)), (50,50))
-resize_icon_1 = pygame.image.load(os.path.join(location, 'resources', 'icons', 'resize-1.png')).convert_alpha()
-resize_icon_2 = pygame.image.load(os.path.join(location, 'resources', 'icons', 'resize-2.png')).convert_alpha()
-resize_icon_1 = pygame.transform.scale(resize_icon_1, (55,55))
-resize_icon_2 = pygame.transform.scale(resize_icon_2, (40,40))
-recolor_surface(resize_icon_1, color_dark)
-recolor_surface(resize_icon_2, color_dark)
-# text_1x = game_font_s.render('1x', True, color_bg) 
-# text_2x = game_font_s.render('2x', True, color_bg)
-
-play_rect = pygame.Rect((0, 100), (90, 50))
-play_text = game_font.render('Play', True, color_dark)
-
-edit_rect = pygame.Rect((0, 100), (90, 50))
-edit_text = game_font.render('Edit', True, color_dark) 
-
-save_rect = pygame.Rect((0, 150), (90, 50))
-save_text = game_font.render('Save', True, color_dark)
-
-create_rect = pygame.Rect((0, 150), (90, 50))
-create_text = game_font_s.render('Create', True, color_dark)
-
-load_rect = pygame.Rect((0, 200), (90, 50))
-load_text = game_font.render('Load', True, color_dark)
-
-
-
 ############################### < MAIN GAME LOOP > ####################################
 game_state = GameState()
 while True:
