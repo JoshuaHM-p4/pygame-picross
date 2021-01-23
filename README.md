@@ -7,7 +7,7 @@ This is my rendition of the game called "Picross" (by Nintendo) or Nonagrams mad
 - NumPy
 
 ## Run Instructions
-Run the file *picross.py* to start the program.
+Run the file *launcher.py* to start the program.
 
 ## Game Controls
 ScrollWheel

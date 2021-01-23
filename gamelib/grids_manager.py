@@ -2,8 +2,8 @@ import pygame
 import numpy as np
 import os
 
-directory = os.path.join(os.getcwd(),  'grids')
-font = pygame.font.Font(os.path.join(os.getcwd(),'resources','04B_19.TTF'),15)
+directory = './grids'
+font = pygame.font.Font('./resources/04B_19.TTF',15)
 dark_color = (5, 102, 118)
 light_color = (163, 210, 202)
 
@@ -13,12 +13,12 @@ def save_to_dir(grid):
         os.mkdir(directory)
 
     filename = 'Grid'
-    fullpath = os.path.join(directory, filename)
-    
+    fullpath = f"./grids/{filename}"
+
     i = 0
     while os.path.exists(fullpath + '.npy'):
         i += 1
-        fullpath = os.path.join(directory, filename + '_' + str(i).zfill(2))
+        fullpath = os.path.join(directory, (filename + '_' + str(i).zfill(2)))
 
     np.save(fullpath, grid, allow_pickle = True)
 

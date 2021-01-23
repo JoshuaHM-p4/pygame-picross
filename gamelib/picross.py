@@ -1,14 +1,10 @@
 import pygame, sys, os, random
 from collections import Counter
-GITHUB_AUTHOR = 'JoshuaHM-p4'
 
 ##################################### General Setup #################################
-pygame.init()
-clock = pygame.time.Clock()
-
-from pixel import Pixel
-from grid import Grid
-import grids_manager
+from gamelib.pixel import Pixel
+from gamelib.grid import Grid
+from gamelib import grids_manager
 
 # Game Screen Variables
 screen_width = 480
@@ -24,8 +20,8 @@ color_light = (163, 210, 202)
 color_mid = (94, 170, 168)
 color_dark = (5, 102, 118)
 location = os.getcwd()
-game_font =  pygame.font.Font(os.path.join(location,'resources','04B_19.TTF'),30)
-game_font_s =  pygame.font.Font(os.path.join(location,'resources','04B_19.TTF'),25)
+game_font =  pygame.font.Font('./resources/04B_19.TTF',30)
+game_font_s =  pygame.font.Font('./resources/04B_19.TTF',25)
 
 ## Recolor Function ##
 def recolor_surface(surface, color):
@@ -42,8 +38,8 @@ cross_rect = pygame.Rect((screen_width-100,screen_height//2), (50,50))
 cross_active = game_font.render('x', True, color_dark)
 cross_inactive = game_font.render('x', True, color_mid)
 
-settings_hidden = pygame.Rect((0,0),(60,60))
-settings_surface = pygame.image.load(os.path.join(location, 'resources', 'icons','gear.png')).convert_alpha()
+settings_hidden = pygame.Rect((0,25),(50, 50))
+settings_surface = pygame.image.load('./resources/icons/gear.png').convert_alpha()
 settings_surface = pygame.transform.scale(settings_surface, (50,50))
 recolor_surface(settings_surface, color_dark)
 settings_rect = settings_surface.get_rect(topleft = (0,0))
@@ -53,8 +49,8 @@ grid_size5 = game_font_s.render('5', True, color_dark)
 grid_size10 = game_font_s.render('10', True, color_dark)
 
 resize_rect = pygame.Rect((screen_width-100,(screen_height//2 - 70)), (50,50))
-resize_icon_1 = pygame.image.load(os.path.join(location, 'resources', 'icons', 'resize-1.png')).convert_alpha()
-resize_icon_2 = pygame.image.load(os.path.join(location, 'resources', 'icons', 'resize-2.png')).convert_alpha()
+resize_icon_1 = pygame.image.load('./resources/icons/resize-1.png').convert_alpha()
+resize_icon_2 = pygame.image.load('./resources/icons/resize-2.png').convert_alpha()
 resize_icon_1 = pygame.transform.scale(resize_icon_1, (55,55))
 resize_icon_2 = pygame.transform.scale(resize_icon_2, (40,40))
 recolor_surface(resize_icon_1, color_dark)
@@ -80,14 +76,19 @@ create_text = game_font_s.render('Create', True, color_dark)
 load_rect = pygame.Rect((0, 200), (90, 50))
 load_text = game_font.render('Load', True, color_dark)
 
-def settings_animation(surface, pos):
+def rotate(surface, angle):
+    rot_sur = pygame.transform.rotozoom(surface, angle, 1)
+    rot_rect = rot_sur.get_rect(center = (50,50))
+    return rot_sur, rot_rect
+
+def settings_animation(surface, pos, angle):
     if settings_hidden.collidepoint(pos) and settings_rect.centerx <= 25:
         settings_rect.centerx += 1
     elif settings_rect.centerx >= -30:
         settings_rect.centerx -= 1
-    surface = pygame.transform.rotozoom(surface, -settings_rect.centerx*5, 1)
-    # surface = pygame.transform.rotate(surface, -settings_rect.centerx*5)
-    return surface
+    surface, rect = rotate(surface, settings_rect.centerx*5)
+    rect.centerx = settings_rect.centerx
+    return surface, rect
 
 def top_text(message: str):
     message_text = game_font.render(message, True, color_dark)
@@ -108,6 +109,7 @@ class GameState:
     resized = False
     menu_visible = False
     load_icons_visible = False
+    angle = 0
 
     grid_filename = None
     grid_is_10x10 = False
@@ -139,20 +141,18 @@ class GameState:
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            if pygame.mouse.get_pressed()[0]:
-                self.player_grid.change_pixel(pos,'fill')
-                if resize_rect.collidepoint(pos):
-                    self.resized = not self.resized
-                    self.resize_everything()
-                if grid_size_rect.collidepoint(pos):
-                    self.grid_is_10x10 = not self.grid_is_10x10
-                    self.player_grid.change_size(self.grid_is_10x10, self.resized)
-                    self.player_grid.CreateGrid()
-                    self.player_grid.reposition_grid()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    if settings_rect.collidepoint(pos):
+                    if settings_hidden.collidepoint(pos):
                         self.menu_visible = not self.menu_visible
+                    if resize_rect.collidepoint(pos):
+                        self.resized = not self.resized
+                        self.resize_everything()
+                    if grid_size_rect.collidepoint(pos):
+                        self.grid_is_10x10 = not self.grid_is_10x10
+                        self.player_grid.change_size(self.grid_is_10x10, self.resized)
+                        self.player_grid.CreateGrid()
+                        self.player_grid.reposition_grid()
                     if play_rect.collidepoint(pos) and self.menu_visible:
                         self.hidden_grid = self.player_grid 
                         self.player_grid = Grid(self.player_grid.grid.shape)
@@ -183,7 +183,11 @@ class GameState:
                 elif event.button == 5 and self.load_icons_visible: grids_manager.move_right()
                 else: 
                     self.menu_visible = False
-                    self.load_icons_visible = False 
+                    self.load_icons_visible = False
+
+            # < Main Game Board Actions > #
+            if pygame.mouse.get_pressed()[0]:
+                self.player_grid.change_pixel(pos,'fill')
             if pygame.mouse.get_pressed()[2]:
                 self.player_grid.change_pixel(pos,'empty')
 
@@ -211,8 +215,8 @@ class GameState:
             screen.blit(grid_size10, (grid_size_rect.x + 17, grid_size_rect.y + 10))
 
         # < Menu > #
-        rotated_surface = settings_animation(settings_surface, pos)
-        screen.blit(rotated_surface, settings_rect)
+        rotated_surface, rotated_rect = settings_animation(settings_surface, pos, self.angle)
+        screen.blit(rotated_surface, rotated_rect)
 
         if self.menu_visible:
             screen.blit(menu_background, menu_background.get_rect(topleft = (0,0)))
@@ -246,20 +250,11 @@ class GameState:
                 self.cross = True
             if event.type == pygame.KEYUP:
                 self.cross = False
-            if pygame.mouse.get_pressed()[0]:
-                if resize_rect.collidepoint(pos):
-                    self.resized = not self.resized
-                    self.resize_everything()
-                if self.timer_on:
-                    if not self.cross:
-                        self.player_grid.change_pixel(pos,'fill')
-                    else:
-                        self.player_grid.change_pixel(pos, 'cross')
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     if cross_rect.collidepoint(pos):
                         self.cross = not self.cross
-                    if settings_rect.collidepoint(pos):
+                    if settings_hidden.collidepoint(pos):
                         self.menu_visible = not self.menu_visible
                     if edit_rect.collidepoint(pos) and self.menu_visible:
                         self.player_grid = self.hidden_grid
@@ -288,6 +283,17 @@ class GameState:
                 else:
                     self.menu_visible = False
                     self.load_icons_visible = False
+
+            # < Main Game Board Actions > #
+            if pygame.mouse.get_pressed()[0]:
+                if resize_rect.collidepoint(pos):
+                    self.resized = not self.resized
+                    self.resize_everything()
+                if self.timer_on:
+                    if not self.cross:
+                        self.player_grid.change_pixel(pos,'fill')
+                    else:
+                        self.player_grid.change_pixel(pos, 'cross')
             if self.cross and pygame.mouse.get_pressed()[2] and self.timer_on:
                 self.player_grid.change_pixel(pos,'uncross')
            
@@ -349,9 +355,9 @@ class GameState:
             self.timer_on = False
 
         # < Options Menu > #
-        rotated_surface = settings_animation(settings_surface, pos)
-        screen.blit(rotated_surface, settings_rect)     
-           
+        rotated_surface, rotated_rect = settings_animation(settings_surface, pos, self.angle)
+        screen.blit(rotated_surface, rotated_rect)
+
         if self.menu_visible:
             screen.blit(menu_background, menu_background.get_rect(topleft = (0,0)))
             self.show_Menu()
@@ -409,9 +415,3 @@ class GameState:
             pygame.draw.rect(screen, color_light, load_rect)
             screen.blit(load_text, (load_rect.x + 12, load_rect.y + 12))
                 
-############################### < MAIN GAME LOOP > ####################################
-game_state = GameState()
-while True:
-    game_state.state_manager()
-    clock.tick(120)
-#######################################################################################

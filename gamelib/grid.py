@@ -2,10 +2,10 @@ import pygame
 import numpy as np
 import os
 
-from pixel import Pixel
+from gamelib.pixel import Pixel
 class Grid:
     screen = None
-    font = pygame.font.Font(os.path.join(os.getcwd(),'resources','04B_19.TTF'),30)
+    font = pygame.font.Font('./resources/04B_19.TTF',30)
     number_color = (94, 170, 167)
 
     def __init__(self, grid_size = (5,5)):
